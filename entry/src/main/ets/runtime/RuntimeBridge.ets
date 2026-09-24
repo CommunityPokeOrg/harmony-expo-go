@@ -73,11 +73,15 @@ export class WebViewRuntimeBridge implements RuntimeBridge {
  * PLACEHOLDER — future native JS runtime.
  *
  * Executing a React Native bundle on HarmonyOS NEXT requires:
- *   1. a JS engine for OHOS (Hermes fork, JSC via NativeEngine, or V8),
- *   2. a NAPI bridge implementing the RN bridge/turbo-module surface,
- *   3. ArkTS/ArkUI implementations of core RN view managers.
- * None of that exists in this scaffold; calling prepare() fails loudly so the
- * limitation is never implied to work.
+ *   1. a JS engine for OHOS — see runtime/rn/JsEngineAdapter.ets (the
+ *      ArkWeb adapter works for plain JS; the NativeEngine adapter is a
+ *      stub pending a C++ NAPI module),
+ *   2. a bridge/turbo-module surface — see runtime/rn/NativeModuleRegistry.ets,
+ *   3. a UIManager + ArkUI view layer — see runtime/rn/ShadowTree.ets and
+ *      runtime/rn/RnSurface.ets.
+ * Bundle fetching already exists (runtime/rn/RnBundleLoader.ets); the
+ * engine and bridge do not, so prepare() fails loudly.
+ * Full investigation: docs/rn-bridge-architecture.md.
  */
 export class HermesRuntimeBridge implements RuntimeBridge {
   readonly kind: RuntimeKind = RuntimeKind.HERMES;
@@ -86,7 +90,8 @@ export class HermesRuntimeBridge implements RuntimeBridge {
   prepare(project: ProjectEntry): Promise<void> {
     return Promise.reject(new Error(
       'HermesRuntimeBridge is a placeholder: React Native bundle execution ' +
-      'is not implemented for HarmonyOS NEXT. Only web-served projects run.'
+      'is not implemented for HarmonyOS NEXT (no JS engine is bound). ' +
+      'Only web-served projects run.'
     ));
   }
 

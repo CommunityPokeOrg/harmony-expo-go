@@ -5,6 +5,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { UrlEntryBar } from '../components/UrlEntryBar';
 import { RecentProjectsSection } from '../components/RecentProjectsSection';
+import { DeepLinkRouter } from '../deeplink/DeepLinkRouter';
 import { ProjectEntry } from '../model/ProjectEntry';
 import { RecentProjectsStore } from '../model/RecentProjectsStore';
 import { ExpoUrl } from '../utils/ExpoUrl';
@@ -24,16 +25,46 @@ struct Index {
 
   aboutToAppear(): void {
     this.refreshRecents();
+    // Deep links delivered via EntryAbility wants (exp://, exps://, http(s)).
+    // Queued links from a cold start flush as soon as we subscribe.
+    DeepLinkRouter.instance.setListener((raw: string) => {
+      this.handleDeepLink(raw);
+    });
+  }
+
+  aboutToDisappear(): void {
+    DeepLinkRouter.instance.clearListener();
+  }
+
+  /**
+   * FUNCTIONAL — exp:// deep links land here from the system want handler.
+   * Normalization/validation is the same as manual entry, so an
+   * unsupported or malformed link is rejected with a toast and never
+   * reaches the runner.
+   */
+  private handleDeepLink(raw: string): void {
+    const url = ExpoUrl.normalize(raw);
+    if (url === null) {
+      hilog.warn(DOMAIN, TAG, 'Ignoring unsupported deep link: %{public}s', raw);
+      promptAction.showToast({ message: 'Unsupported link: ' + raw });
+      return;
+    }
+    this.openProject(url, 'deepLink');
   }
 
   private refreshRecents(): void {
     this.recents = this.store.list();
   }
 
-  private openProject(url: string, source: 'url' | 'qr'): void {
+  private openProject(url: string, source: 'url' | 'qr' | 'deepLink'): void {
     const entry = new ProjectEntry(ExpoUrl.displayName(url), url, source, Date.now());
     this.store.remember(entry);
     this.refreshRecents();
+    if (source === 'deepLink') {
+      // A link can arrive while a runner is already on screen; return to the
+      // launcher root first so the new project replaces, not stacks over it.
+      this.pathStack.popToIndex(0);
+    }
     this.pathStack.pushPath({ name: ROUTE_RUNNER, param: entry });
   }
 
@@ -50,9 +81,17 @@ struct Index {
     scanBarcode.startScanForResult(getContext(this), options)
       .then((result: scanBarcode.ScanResult) => {
         const value = result.originalValue;
-        if (value !== undefined && value.length > 0) {
-          this.openProject(value, 'qr');
+        if (value === undefined || value.length === 0) {
+          return;
         }
+        // Expo QR codes encode exp:// links; normalize before running so the
+        // WebView gets an http(s) URL and non-URL scans are rejected here.
+        const url = ExpoUrl.normalize(value);
+        if (url === null) {
+          promptAction.showToast({ message: 'QR code is not a project URL' });
+          return;
+        }
+        this.openProject(url, 'qr');
       })
       .catch((err: BusinessError) => {
         hilog.warn(DOMAIN, TAG, 'Scan failed: %{public}s', JSON.stringify(err));

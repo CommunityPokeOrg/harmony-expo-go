@@ -2,7 +2,7 @@
  * A project the launcher can open: an Expo dev-server (Metro) endpoint or any
  * web-served URL rendered through the WebView runtime bridge.
  */
-export type ProjectSource = 'url' | 'qr';
+export type ProjectSource = 'url' | 'qr' | 'deepLink';
 
 export class ProjectEntry {
   name: string;

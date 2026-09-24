@@ -35,6 +35,18 @@
     {
       "name": "border_subtle",
       "value": "#2A2C36"
+    },
+    {
+      "name": "error_red",
+      "value": "#B3261E"
+    },
+    {
+      "name": "error_red_deep",
+      "value": "#7E1610"
+    },
+    {
+      "name": "overlay_scrim",
+      "value": "#99000000"
     }
   ]
 }

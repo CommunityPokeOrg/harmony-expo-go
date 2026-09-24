@@ -46,7 +46,7 @@ export struct RecentProjectsSection {
         Text(this.formatWhen(entry.lastOpenedAt))
           .fontSize(11)
           .fontColor($r('app.color.text_muted'))
-        Text(entry.source === 'qr' ? 'QR' : 'URL')
+        Text(entry.source === 'qr' ? 'QR' : (entry.source === 'deepLink' ? 'LINK' : 'URL'))
           .fontSize(10)
           .fontColor($r('app.color.text_secondary'))
           .padding({ left: 6, right: 6, top: 1, bottom: 1 })
