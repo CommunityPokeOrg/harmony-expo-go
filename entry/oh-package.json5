@@ -1,0 +1,9 @@
+{
+  "name": "entry",
+  "version": "0.1.0",
+  "description": "Launcher module for the HarmonyOS NEXT Expo Go-style client.",
+  "main": "",
+  "author": "CommunityPoke",
+  "license": "Apache-2.0",
+  "dependencies": {}
+}

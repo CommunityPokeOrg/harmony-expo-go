@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "Expo Go-style launcher and runtime client"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "Main launcher ability"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "Expo Go for HarmonyOS"
+    }
+  ]
+}
