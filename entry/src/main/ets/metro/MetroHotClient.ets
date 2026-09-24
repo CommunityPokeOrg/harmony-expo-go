@@ -35,6 +35,8 @@ export class MetroHotMessage {
   description: string = '';
   /** body.revisionId for update frames, when present. */
   revisionId: string = '';
+  /** body.name for send-dev-command frames, when present. */
+  command: string = '';
 
   static parse(data: string): MetroHotMessage | null {
     let obj: Record<string, Object>;
@@ -69,6 +71,10 @@ export class MetroHotMessage {
       } else if (typeof revisionId === 'number') {
         msg.revisionId = 'r' + revisionId;
       }
+      const name = b['name'];
+      if (typeof name === 'string') {
+        msg.command = name;
+      }
     }
     return msg;
   }
@@ -96,6 +102,12 @@ export class MetroHotClient {
   onUpdateDone: (revisionId: string) => void = () => {
   };
   onMetroError: (errorType: string, description: string) => void = () => {
+  };
+  /** Server asked the client to reload ('reload' frame or dev command). */
+  onReloadRequested: () => void = () => {
+  };
+  /** Server asked the client to open the dev menu ('devMenu' frame). */
+  onDevMenuRequested: () => void = () => {
   };
   /** Everything not otherwise handled: warnings, ok, unknown frame types. */
   onMessage: (message: string) => void = () => {
@@ -180,8 +192,39 @@ export class MetroHotClient {
     };
     this.onMetroError = () => {
     };
+    this.onReloadRequested = () => {
+    };
+    this.onDevMenuRequested = () => {
+    };
     this.onMessage = () => {
     };
+  }
+
+  /**
+   * Which high-level action a parsed frame implies — extracted so the
+   * mapping is unit-testable without a socket.
+   */
+  static frameAction(msg: MetroHotMessage): 'updateStart' | 'updateDone' | 'error' | 'reload' | 'devMenu' | 'other' {
+    switch (msg.type) {
+      case 'bundle-started':
+      case 'update-start':
+      case 'update':
+        return 'updateStart';
+      case 'update-done':
+      case 'bundle-build-done':
+        return 'updateDone';
+      case 'error':
+        return 'error';
+      case 'reload':
+        return 'reload';
+      case 'send-dev-command':
+        return msg.command === 'reload' ? 'reload'
+          : (msg.command === 'devMenu' ? 'devMenu' : 'other');
+      case 'devMenu':
+        return 'devMenu';
+      default:
+        return 'other';
+    }
   }
 
   private setStatus(status: MetroHotStatus, detail: string): void {
@@ -196,14 +239,11 @@ export class MetroHotClient {
       this.onMessage(raw);
       return;
     }
-    switch (msg.type) {
-      case 'bundle-started':
-      case 'update-start':
-      case 'update':
+    switch (MetroHotClient.frameAction(msg)) {
+      case 'updateStart':
         this.onUpdateStart();
         break;
-      case 'update-done':
-      case 'bundle-build-done':
+      case 'updateDone':
         this.onUpdateDone(msg.revisionId);
         break;
       case 'error':
@@ -212,13 +252,18 @@ export class MetroHotClient {
           msg.description.length > 0 ? msg.description : raw
         );
         break;
-      case 'warning':
-        this.onMessage('warning: ' + msg.description);
+      case 'reload':
+        this.onReloadRequested();
         break;
-      case 'ok':
+      case 'devMenu':
+        this.onDevMenuRequested();
         break;
       default:
-        this.onMessage(raw);
+        if (msg.type === 'warning') {
+          this.onMessage('warning: ' + msg.description);
+        } else if (msg.type !== 'ok') {
+          this.onMessage(raw);
+        }
         break;
     }
   }

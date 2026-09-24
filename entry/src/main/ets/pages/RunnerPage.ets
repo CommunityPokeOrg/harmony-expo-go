@@ -74,6 +74,15 @@ export struct RunnerPage {
       this.bundleUpdating = false;
       this.showRedbox(errorType, description);
     };
+    this.hot.onReloadRequested = () => {
+      // 'r' in `expo start` broadcasts a reload frame over /hot.
+      this.bundleUpdating = false;
+      this.bridge.reload();
+    };
+    this.hot.onDevMenuRequested = () => {
+      // 'd' in `expo start` broadcasts a dev-menu frame over /hot.
+      this.showDevMenu = true;
+    };
   }
 
   private probeServer(autoConnect: boolean): void {

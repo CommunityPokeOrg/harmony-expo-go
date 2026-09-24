@@ -123,9 +123,12 @@ entry/                        the single HAP module
   whether to auto-connect fast refresh).
 - Metro fast-refresh socket: `MetroHotClient` connects to
   `ws(s)://<metro>/hot`, parses Metro's frame types (`update-start`,
-  `update`, `update-done`, `error`, `warning`), and on a completed build
-  reloads the runner — the WebView runtime can't apply in-bundle HMR, so
-  reload is the honest equivalent. `error` frames open the redbox.
+  `update`, `update-done`, `error`, `warning`, `reload`,
+  `send-dev-command`, `devMenu`), and on a completed build reloads the
+  runner — the WebView runtime can't apply in-bundle HMR, so reload is the
+  honest equivalent. `error` frames open the redbox; `reload` frames and
+  `send-dev-command:name=reload` (pressing `r` in `expo start`) reload the
+  project; `devMenu` frames (`d` in the CLI) open the dev menu.
 - Dev-menu overlay: bottom sheet on the runner (floating DEV button) with
   Reload, fast-refresh connect/disconnect + status, dev-server probe, and
   Copy URL.

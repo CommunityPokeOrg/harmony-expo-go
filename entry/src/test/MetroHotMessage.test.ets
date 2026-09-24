@@ -58,4 +58,44 @@ export default function metroHotMessageTest() {
       expect(MetroHotClient.hotUrlFor('exp://host:8081')).assertNull();
     });
   });
+
+  describe('MetroHotClient.frameAction', () => {
+    it('maps_reload_frames_and_dev_commands', () => {
+      const plain = MetroHotMessage.parse('{"type":"reload"}');
+      const cmd = MetroHotMessage.parse(
+        '{"type":"send-dev-command","body":{"name":"reload"}}');
+      const menu = MetroHotMessage.parse('{"type":"devMenu","body":{"title":"d"}}');
+      expect(plain === null).assertFalse();
+      expect(cmd === null).assertFalse();
+      expect(menu === null).assertFalse();
+      if (plain !== null && cmd !== null && menu !== null) {
+        expect(MetroHotClient.frameAction(plain)).assertEqual('reload');
+        expect(MetroHotClient.frameAction(cmd)).assertEqual('reload');
+        expect(MetroHotClient.frameAction(menu)).assertEqual('devMenu');
+      }
+    });
+
+    it('ignores_other_dev_commands', () => {
+      const msg = MetroHotMessage.parse(
+        '{"type":"send-dev-command","body":{"name":"toggleInspector"}}');
+      expect(msg === null).assertFalse();
+      if (msg !== null) {
+        expect(MetroHotClient.frameAction(msg)).assertEqual('other');
+      }
+    });
+
+    it('maps_update_and_error_frames', () => {
+      const upd = MetroHotMessage.parse('{"type":"update"}');
+      const done = MetroHotMessage.parse('{"type":"update-done"}');
+      const err = MetroHotMessage.parse('{"type":"error"}');
+      expect(upd === null).assertFalse();
+      expect(done === null).assertFalse();
+      expect(err === null).assertFalse();
+      if (upd !== null && done !== null && err !== null) {
+        expect(MetroHotClient.frameAction(upd)).assertEqual('updateStart');
+        expect(MetroHotClient.frameAction(done)).assertEqual('updateDone');
+        expect(MetroHotClient.frameAction(err)).assertEqual('error');
+      }
+    });
+  });
 }
